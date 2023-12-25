@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.supretest.base.mapper.UiScriptMappingMapper">
+  <resultMap id="BaseResultMap" type="com.supretest.base.domain.UiScriptMapping">
+    <id column="id" jdbcType="VARCHAR" property="id" />
+    <result column="location_type" jdbcType="VARCHAR" property="locationType" />
+    <result column="operation" jdbcType="VARCHAR" property="operation" />
+    <result column="language_type" jdbcType="VARCHAR" property="languageType" />
+    <result column="script" jdbcType="VARCHAR" property="script" />
+    <result column="create_time" jdbcType="VARCHAR" property="createTime" />
+    <result column="update_time" jdbcType="VARCHAR" property="updateTime" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    id, location_type, operation, language_type, script, create_time, update_time
+  </sql>
+
+  <select id="selectByCondition" parameterType="com.supretest.ui.dto.UiScenarioDTO" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from ui_script_mapping
+    where location_type = #{locationType,jdbcType=VARCHAR} and operation = #{operation,jdbcType=VARCHAR}
+  </select>
+
+
+
+</mapper>

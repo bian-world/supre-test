@@ -1,0 +1,347 @@
+package com.supretest.service;
+
+import com.alibaba.fastjson.JSON;
+import com.supretest.api.dto.datacount.response.TaskInfoResult;
+import com.supretest.api.dto.definition.ApiSwaggerUrlDTO;
+import com.supretest.base.domain.*;
+import com.supretest.base.mapper.*;
+import com.supretest.base.mapper.ext.ExtScheduleMapper;
+import com.supretest.commons.constants.ScheduleGroup;
+import com.supretest.commons.constants.ScheduleType;
+import com.supretest.commons.exception.MSException;
+import com.supretest.commons.utils.DateUtils;
+import com.supretest.commons.utils.LogUtil;
+import com.supretest.commons.utils.ServiceUtils;
+import com.supretest.commons.utils.SessionUtils;
+import com.supretest.controller.request.BaseQueryRequest;
+import com.supretest.controller.request.OrderRequest;
+import com.supretest.controller.request.QueryScheduleRequest;
+import com.supretest.controller.request.ScheduleRequest;
+import com.supretest.dto.ScheduleDao;
+import com.supretest.job.sechedule.*;
+import org.apache.commons.lang3.StringUtils;
+import org.quartz.JobKey;
+import org.quartz.SchedulerException;
+import org.quartz.TriggerKey;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.Resource;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional(rollbackFor = Exception.class)
+public class ScheduleService {
+
+    @Resource
+    private TestPlanMapper testPlanMapper;
+    @Resource
+    private ApiScenarioMapper apiScenarioMapper;
+    @Resource
+    private ScheduleMapper scheduleMapper;
+    @Resource
+    private ScheduleManager scheduleManager;
+    @Resource
+    private ExtScheduleMapper extScheduleMapper;
+    @Resource
+    private UserMapper userMapper;
+    @Resource
+    private SwaggerUrlProjectMapper swaggerUrlProjectMapper;
+
+    public void addSchedule(Schedule schedule) {
+        schedule.setId(UUID.randomUUID().toString());
+        schedule.setCreateTime(System.currentTimeMillis());
+        schedule.setUpdateTime(System.currentTimeMillis());
+        scheduleMapper.insert(schedule);
+    }
+
+    public void addSwaggerUrlSchedule(SwaggerUrlProject swaggerUrlProject) {
+        swaggerUrlProjectMapper.insert(swaggerUrlProject);
+    }
+
+    public void updateSwaggerUrlSchedule(SwaggerUrlProject swaggerUrlProject) {
+        swaggerUrlProjectMapper.updateByPrimaryKeyWithBLOBs(swaggerUrlProject);
+    }
+
+    public ApiSwaggerUrlDTO selectApiSwaggerUrlDTO(String id) {
+        return extScheduleMapper.select(id);
+    }
+
+    public Schedule getSchedule(String ScheduleId) {
+        return scheduleMapper.selectByPrimaryKey(ScheduleId);
+    }
+
+    public int editSchedule(Schedule schedule) {
+        schedule.setUpdateTime(System.currentTimeMillis());
+        return scheduleMapper.updateByPrimaryKeySelective(schedule);
+    }
+
+    public Schedule getScheduleByResource(String resourceId, String group) {
+        ScheduleExample example = new ScheduleExample();
+        example.createCriteria().andResourceIdEqualTo(resourceId).andGroupEqualTo(group);
+        List<Schedule> schedules = scheduleMapper.selectByExample(example);
+        if (schedules.size() > 0) {
+            return schedules.get(0);
+        }
+        return null;
+    }
+
+    public List<Schedule> getScheduleByResourceIds(List<String>resourceIds, String group) {
+        ScheduleExample example = new ScheduleExample();
+        if(resourceIds.size()==0){
+            return new ArrayList<>();
+        }
+        example.createCriteria().andResourceIdIn(resourceIds).andGroupEqualTo(group);
+        List<Schedule> schedules = scheduleMapper.selectByExample(example);
+        if (schedules.size() > 0) {
+            return schedules;
+        }
+        return new ArrayList<>();
+    }
+
+    public int deleteByResourceId(String resourceId, String group) {
+        ScheduleExample scheduleExample = new ScheduleExample();
+        scheduleExample.createCriteria().andResourceIdEqualTo(resourceId);
+        removeJob(resourceId, group);
+        return scheduleMapper.deleteByExample(scheduleExample);
+    }
+
+    public int deleteByProjectId(String projectId) {
+        ScheduleExample scheduleExample = new ScheduleExample();
+        scheduleExample.createCriteria().andProjectIdEqualTo(projectId);
+        List<Schedule> schedules = scheduleMapper.selectByExample(scheduleExample);
+        schedules.forEach(item -> {
+            removeJob(item.getKey(), item.getGroup());
+            swaggerUrlProjectMapper.deleteByPrimaryKey(item.getResourceId());
+        });
+        return scheduleMapper.deleteByExample(scheduleExample);
+    }
+
+    public int deleteByWorkspaceId(String workspaceId) {
+        ScheduleExample scheduleExample = new ScheduleExample();
+        scheduleExample.createCriteria().andWorkspaceIdEqualTo(workspaceId);
+        List<Schedule> schedules = scheduleMapper.selectByExample(scheduleExample);
+        schedules.forEach(item -> {
+            removeJob(item.getResourceId(), item.getGroup());
+        });
+        return scheduleMapper.deleteByExample(scheduleExample);
+    }
+
+    private void removeJob(String resourceId, String group) {
+        if (StringUtils.equals(ScheduleGroup.API_SCENARIO_TEST.name(), group)) {
+            scheduleManager.removeJob(ApiScenarioTestJob.getJobKey(resourceId), ApiScenarioTestJob.getTriggerKey(resourceId));
+        } else if (StringUtils.equals(ScheduleGroup.TEST_PLAN_TEST.name(), group)) {
+            scheduleManager.removeJob(TestPlanTestJob.getJobKey(resourceId), TestPlanTestJob.getTriggerKey(resourceId));
+        } else if (StringUtils.equals(ScheduleGroup.SWAGGER_IMPORT.name(), group)) {
+            scheduleManager.removeJob(SwaggerUrlImportJob.getJobKey(resourceId), SwaggerUrlImportJob.getTriggerKey(resourceId));
+        } else if (StringUtils.equals(ScheduleGroup.PERFORMANCE_TEST.name(), group)) {
+            scheduleManager.removeJob(PerformanceTestJob.getJobKey(resourceId), PerformanceTestJob.getTriggerKey(resourceId));
+        } else {
+            scheduleManager.removeJob(ApiTestJob.getJobKey(resourceId), ApiTestJob.getTriggerKey(resourceId));
+        }
+    }
+
+    public List<Schedule> listSchedule() {
+        ScheduleExample example = new ScheduleExample();
+        return scheduleMapper.selectByExample(example);
+    }
+
+    public List<Schedule> getEnableSchedule() {
+        ScheduleExample example = new ScheduleExample();
+        example.createCriteria().andEnableEqualTo(true);
+        return scheduleMapper.selectByExample(example);
+    }
+
+    public void startEnableSchedules() {
+        List<Schedule> Schedules = getEnableSchedule();
+
+        Schedules.forEach(schedule -> {
+            try {
+                if (schedule.getEnable()) {
+                    LogUtil.info("初始化任务：" + JSON.toJSONString(schedule));
+                    scheduleManager.addOrUpdateCronJob(new JobKey(schedule.getKey(), schedule.getGroup()),
+                            new TriggerKey(schedule.getKey(), schedule.getGroup()), Class.forName(schedule.getJob()), schedule.getValue(),
+                            scheduleManager.getDefaultJobDataMap(schedule, schedule.getValue(), schedule.getUserId()));
+                }
+            } catch (Exception e) {
+                LogUtil.error("初始化任务失败", e);
+            }
+        });
+    }
+
+    public Schedule buildApiTestSchedule(ScheduleRequest request) {
+        Schedule schedule = new Schedule();
+        schedule.setResourceId(request.getResourceId());
+        schedule.setEnable(request.getEnable());
+        schedule.setValue(request.getValue().trim());
+        schedule.setKey(request.getResourceId());
+        schedule.setUserId(SessionUtils.getUser().getId());
+        schedule.setProjectId(request.getProjectId());
+        schedule.setWorkspaceId(request.getWorkspaceId());
+        schedule.setConfig(request.getConfig());
+        return schedule;
+    }
+
+    public void resetJob(Schedule request, JobKey jobKey, TriggerKey triggerKey, Class clazz) {
+        try {
+            scheduleManager.removeJob(jobKey, triggerKey);
+        } catch (Exception e) {
+            LogUtil.error(e);
+            MSException.throwException("重置定时任务-删除旧定时任务时出现异常");
+        }
+        if(!request.getEnable()){
+            return;
+        }
+        try {
+            scheduleManager.addCronJob(jobKey, triggerKey, clazz, request.getValue(),
+                    scheduleManager.getDefaultJobDataMap(request, request.getValue(), SessionUtils.getUser().getId()));
+        } catch (Exception e) {
+            LogUtil.error(e);
+            MSException.throwException("重置定时任务-启动新定时任务出现异常");
+        }
+    }
+
+    public void addOrUpdateCronJob(Schedule request, JobKey jobKey, TriggerKey triggerKey, Class clazz) {
+        Boolean enable = request.getEnable();
+        String cronExpression = request.getValue();
+        if (enable != null && enable && StringUtils.isNotBlank(cronExpression)) {
+            try {
+                scheduleManager.addOrUpdateCronJob(jobKey, triggerKey, clazz, cronExpression,
+                        scheduleManager.getDefaultJobDataMap(request, cronExpression, SessionUtils.getUser().getId()));
+            } catch (SchedulerException e) {
+                LogUtil.error(e.getMessage(), e);
+                MSException.throwException("定时任务开启异常");
+            }
+        } else {
+            try {
+                scheduleManager.removeJob(jobKey, triggerKey);
+            } catch (Exception e) {
+                MSException.throwException("定时任务关闭异常");
+            }
+        }
+    }
+
+    public List<ScheduleDao> list(QueryScheduleRequest request) {
+        List<OrderRequest> orderList = ServiceUtils.getDefaultOrder(request.getOrders());
+        request.setOrders(orderList);
+        return extScheduleMapper.list(request);
+    }
+
+    public void build(Map<String, String> resourceNameMap, List<ScheduleDao> schedules) {
+        List<String> userIds = schedules.stream()
+                .map(Schedule::getUserId)
+                .collect(Collectors.toList());
+        UserExample example = new UserExample();
+        example.createCriteria().andIdIn(userIds);
+        Map<String, String> userMap = userMapper.selectByExample(example).stream().collect(Collectors.toMap(User::getId, User::getName));
+        schedules.forEach(schedule -> {
+            schedule.setResourceName(resourceNameMap.get(schedule.getResourceId()));
+            schedule.setUserName(userMap.get(schedule.getUserId()));
+        });
+    }
+
+    public long countTaskByProjectId(String projectId, String subProjectId) {
+        return extScheduleMapper.countTaskByProjectId(projectId, subProjectId);
+    }
+
+    public long countTaskByProjectIdInThisWeek(String projectId, String subProjectId) {
+        Map<String, Date> startAndEndDateInWeek = DateUtils.getWeedFirstTimeAndLastTime(new Date());
+
+        Date firstTime = startAndEndDateInWeek.get("firstTime");
+        Date lastTime = startAndEndDateInWeek.get("lastTime");
+
+        if (firstTime == null || lastTime == null) {
+            return 0;
+        } else {
+            return extScheduleMapper.countTaskByProjectIdAndCreateTimeRange(projectId, subProjectId, firstTime.getTime(), lastTime.getTime());
+        }
+    }
+
+    public List<TaskInfoResult> findRunningTaskInfoByProjectID(String projectID, String subProjectID, BaseQueryRequest request) {
+        List<TaskInfoResult> runningTaskInfoList = extScheduleMapper.findRunningTaskInfoByProjectID(projectID, subProjectID, request);
+        return runningTaskInfoList;
+    }
+
+    public void createSchedule(ScheduleRequest request) {
+        Schedule schedule = this.buildApiTestSchedule(request);
+
+
+        JobKey jobKey = null;
+        TriggerKey triggerKey = null;
+        Class clazz = null;
+        if ("testPlan".equals(request.getScheduleFrom())) {
+            TestPlan testPlan = testPlanMapper.selectByPrimaryKey(request.getResourceId());
+            schedule.setName(testPlan.getName());
+            schedule.setProjectId(testPlan.getProjectId());
+            schedule.setGroup(ScheduleGroup.TEST_PLAN_TEST.name());
+            schedule.setType(ScheduleType.CRON.name());
+            schedule.setConfig(request.getConfig());
+            jobKey = TestPlanTestJob.getJobKey(request.getResourceId());
+            triggerKey = TestPlanTestJob.getTriggerKey(request.getResourceId());
+            clazz = TestPlanTestJob.class;
+            schedule.setJob(TestPlanTestJob.class.getName());
+        } else {
+            //默认为情景
+            ApiScenarioWithBLOBs apiScene = apiScenarioMapper.selectByPrimaryKey(request.getResourceId());
+            schedule.setName(apiScene.getName());
+            schedule.setProjectId(apiScene.getProjectId());
+            schedule.setGroup(ScheduleGroup.API_SCENARIO_TEST.name());
+            schedule.setType(ScheduleType.CRON.name());
+            jobKey = ApiScenarioTestJob.getJobKey(request.getResourceId());
+            triggerKey = ApiScenarioTestJob.getTriggerKey(request.getResourceId());
+            clazz = ApiScenarioTestJob.class;
+            schedule.setJob(ApiScenarioTestJob.class.getName());
+        }
+        this.addSchedule(schedule);
+
+        this.addOrUpdateCronJob(request, jobKey, triggerKey, clazz);
+    }
+
+    public void updateSchedule(Schedule request) {
+        JobKey jobKey = null;
+        TriggerKey triggerKey = null;
+        Class clazz = null;
+
+        //测试计划的定时任务修改会修改任务的配置信息，并不只是单纯的修改定时任务时间。需要重新配置这个定时任务
+        boolean needResetJob = false;
+        if (ScheduleGroup.TEST_PLAN_TEST.name().equals(request.getGroup())) {
+            jobKey = TestPlanTestJob.getJobKey(request.getResourceId());
+            triggerKey = TestPlanTestJob.getTriggerKey(request.getResourceId());
+            clazz = TestPlanTestJob.class;
+            request.setJob(TestPlanTestJob.class.getName());
+            needResetJob = true;
+        } else {
+            //默认为情景
+            jobKey = ApiScenarioTestJob.getJobKey(request.getResourceId());
+            triggerKey = ApiScenarioTestJob.getTriggerKey(request.getResourceId());
+            clazz = ApiScenarioTestJob.class;
+            request.setJob(ApiScenarioTestJob.class.getName());
+            needResetJob = true;
+        }
+        this.editSchedule(request);
+
+        if (needResetJob) {
+            this.resetJob(request, jobKey, triggerKey, clazz);
+        } else {
+            this.addOrUpdateCronJob(request, jobKey, triggerKey, clazz);
+        }
+
+    }
+
+    public Object getCurrentlyExecutingJobs() {
+        return scheduleManager.getCurrentlyExecutingJobs();
+    }
+
+    public String getScheduleInfo(String id) {
+        ScheduleExample schedule = new ScheduleExample();
+        schedule.createCriteria().andResourceIdEqualTo(id);
+        List<Schedule> list = scheduleMapper.selectByExample(schedule);
+        if (list.size() > 0) {
+            return list.get(0).getKey();
+        } else {
+            return "";
+        }
+
+    }
+}

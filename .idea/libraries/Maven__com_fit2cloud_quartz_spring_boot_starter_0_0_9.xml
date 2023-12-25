@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: com.fit2cloud:quartz-spring-boot-starter:0.0.9">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/fit2cloud/quartz-spring-boot-starter/0.0.9/quartz-spring-boot-starter-0.0.9.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/com/fit2cloud/quartz-spring-boot-starter/0.0.9/quartz-spring-boot-starter-0.0.9-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/fit2cloud/quartz-spring-boot-starter/0.0.9/quartz-spring-boot-starter-0.0.9-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

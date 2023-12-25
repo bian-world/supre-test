@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.supretest.base.mapper.ZendaoBranchTreeMapper">
+  <resultMap id="BaseResultMap" type="com.supretest.base.domain.ZendaoBranchTree">
+    <id column="id" jdbcType="VARCHAR" property="id" />
+    <result column="project_id" jdbcType="VARCHAR" property="projectId" />
+    <result column="zendao_product_id" jdbcType="VARCHAR" property="zendaoProductId" />
+    <result column="zendao_branch_id" jdbcType="VARCHAR" property="zendaoBranchId" />
+    <result column="zendao_branch_name" jdbcType="VARCHAR" property="zendaoBranchName" />
+    <result column="zendao_branch_status" jdbcType="VARCHAR" property="zendaoBranchStatus" />
+    <result column="zendao_module_id" jdbcType="VARCHAR" property="zendaoModuleId" />
+    <result column="zendao_module_name" jdbcType="VARCHAR" property="zendaoModuleName" />
+    <result column="zendao_parent_module_id" jdbcType="VARCHAR" property="zendaoParentModuleId" />
+    <result column="zendao_module_path" jdbcType="VARCHAR" property="zendaoModulePath" />
+    <result column="create_time" jdbcType="BIGINT" property="createTime" />
+    <result column="update_time" jdbcType="BIGINT" property="updateTime" />
+  </resultMap>
+  <sql id="Example_Where_Clause">
+    <where>
+      <foreach collection="oredCriteria" item="criteria" separator="or">
+        <if test="criteria.valid">
+          <trim prefix="(" prefixOverrides="and" suffix=")">
+            <foreach collection="criteria.criteria" item="criterion">
+              <choose>
+                <when test="criterion.noValue">
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue">
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue">
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue">
+                  and ${criterion.condition}
+                  <foreach close=")" collection="criterion.value" item="listItem" open="(" separator=",">
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause">
+    <where>
+      <foreach collection="example.oredCriteria" item="criteria" separator="or">
+        <if test="criteria.valid">
+          <trim prefix="(" prefixOverrides="and" suffix=")">
+            <foreach collection="criteria.criteria" item="criterion">
+              <choose>
+                <when test="criterion.noValue">
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue">
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue">
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue">
+                  and ${criterion.condition}
+                  <foreach close=")" collection="criterion.value" item="listItem" open="(" separator=",">
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List">
+    id, project_id, zendao_product_id, zendao_branch_id, zendao_branch_name, zendao_branch_status, 
+    zendao_module_id, zendao_module_name, zendao_parent_module_id, zendao_module_path, 
+    create_time, update_time
+  </sql>
+  <select id="selectByExample" parameterType="com.supretest.base.domain.ZendaoBranchTreeExample" resultMap="BaseResultMap">
+    select
+    <if test="distinct">
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from zendao_branch_tree
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null">
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from zendao_branch_tree
+    where id = #{id,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+    delete from zendao_branch_tree
+    where id = #{id,jdbcType=VARCHAR}
+  </delete>
+  <delete id="deleteByExample" parameterType="com.supretest.base.domain.ZendaoBranchTreeExample">
+    delete from zendao_branch_tree
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="com.supretest.base.domain.ZendaoBranchTree">
+    insert into zendao_branch_tree (id, project_id, zendao_product_id, 
+      zendao_branch_id, zendao_branch_name, zendao_branch_status, 
+      zendao_module_id, zendao_module_name, zendao_parent_module_id, 
+      zendao_module_path, create_time, update_time
+      )
+    values (#{id,jdbcType=VARCHAR}, #{projectId,jdbcType=VARCHAR}, #{zendaoProductId,jdbcType=VARCHAR}, 
+      #{zendaoBranchId,jdbcType=VARCHAR}, #{zendaoBranchName,jdbcType=VARCHAR}, #{zendaoBranchStatus,jdbcType=VARCHAR}, 
+      #{zendaoModuleId,jdbcType=VARCHAR}, #{zendaoModuleName,jdbcType=VARCHAR}, #{zendaoParentModuleId,jdbcType=VARCHAR}, 
+      #{zendaoModulePath,jdbcType=VARCHAR}, #{createTime,jdbcType=BIGINT}, #{updateTime,jdbcType=BIGINT}
+      )
+  </insert>
+  <insert id="insertSelective" parameterType="com.supretest.base.domain.ZendaoBranchTree">
+    insert into zendao_branch_tree
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      <if test="projectId != null">
+        project_id,
+      </if>
+      <if test="zendaoProductId != null">
+        zendao_product_id,
+      </if>
+      <if test="zendaoBranchId != null">
+        zendao_branch_id,
+      </if>
+      <if test="zendaoBranchName != null">
+        zendao_branch_name,
+      </if>
+      <if test="zendaoBranchStatus != null">
+        zendao_branch_status,
+      </if>
+      <if test="zendaoModuleId != null">
+        zendao_module_id,
+      </if>
+      <if test="zendaoModuleName != null">
+        zendao_module_name,
+      </if>
+      <if test="zendaoParentModuleId != null">
+        zendao_parent_module_id,
+      </if>
+      <if test="zendaoModulePath != null">
+        zendao_module_path,
+      </if>
+      <if test="createTime != null">
+        create_time,
+      </if>
+      <if test="updateTime != null">
+        update_time,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="projectId != null">
+        #{projectId,jdbcType=VARCHAR},
+      </if>
+      <if test="zendaoProductId != null">
+        #{zendaoProductId,jdbcType=VARCHAR},
+      </if>
+      <if test="zendaoBranchId != null">
+        #{zendaoBranchId,jdbcType=VARCHAR},
+      </if>
+      <if test="zendaoBranchName != null">
+        #{zendaoBranchName,jdbcType=VARCHAR},
+      </if>
+      <if test="zendaoBranchStatus != null">
+        #{zendaoBranchStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="zendaoModuleId != null">
+        #{zendaoModuleId,jdbcType=VARCHAR},
+      </if>
+      <if test="zendaoModuleName != null">
+        #{zendaoModuleName,jdbcType=VARCHAR},
+      </if>
+      <if test="zendaoParentModuleId != null">
+        #{zendaoParentModuleId,jdbcType=VARCHAR},
+      </if>
+      <if test="zendaoModulePath != null">
+        #{zendaoModulePath,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=BIGINT},
+      </if>
+      <if test="updateTime != null">
+        #{updateTime,jdbcType=BIGINT},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="com.supretest.base.domain.ZendaoBranchTreeExample" resultType="java.lang.Long">
+    select count(*) from zendao_branch_tree
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map">
+    update zendao_branch_tree
+    <set>
+      <if test="record.id != null">
+        id = #{record.id,jdbcType=VARCHAR},
+      </if>
+      <if test="record.projectId != null">
+        project_id = #{record.projectId,jdbcType=VARCHAR},
+      </if>
+      <if test="record.zendaoProductId != null">
+        zendao_product_id = #{record.zendaoProductId,jdbcType=VARCHAR},
+      </if>
+      <if test="record.zendaoBranchId != null">
+        zendao_branch_id = #{record.zendaoBranchId,jdbcType=VARCHAR},
+      </if>
+      <if test="record.zendaoBranchName != null">
+        zendao_branch_name = #{record.zendaoBranchName,jdbcType=VARCHAR},
+      </if>
+      <if test="record.zendaoBranchStatus != null">
+        zendao_branch_status = #{record.zendaoBranchStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="record.zendaoModuleId != null">
+        zendao_module_id = #{record.zendaoModuleId,jdbcType=VARCHAR},
+      </if>
+      <if test="record.zendaoModuleName != null">
+        zendao_module_name = #{record.zendaoModuleName,jdbcType=VARCHAR},
+      </if>
+      <if test="record.zendaoParentModuleId != null">
+        zendao_parent_module_id = #{record.zendaoParentModuleId,jdbcType=VARCHAR},
+      </if>
+      <if test="record.zendaoModulePath != null">
+        zendao_module_path = #{record.zendaoModulePath,jdbcType=VARCHAR},
+      </if>
+      <if test="record.createTime != null">
+        create_time = #{record.createTime,jdbcType=BIGINT},
+      </if>
+      <if test="record.updateTime != null">
+        update_time = #{record.updateTime,jdbcType=BIGINT},
+      </if>
+    </set>
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map">
+    update zendao_branch_tree
+    set id = #{record.id,jdbcType=VARCHAR},
+      project_id = #{record.projectId,jdbcType=VARCHAR},
+      zendao_product_id = #{record.zendaoProductId,jdbcType=VARCHAR},
+      zendao_branch_id = #{record.zendaoBranchId,jdbcType=VARCHAR},
+      zendao_branch_name = #{record.zendaoBranchName,jdbcType=VARCHAR},
+      zendao_branch_status = #{record.zendaoBranchStatus,jdbcType=VARCHAR},
+      zendao_module_id = #{record.zendaoModuleId,jdbcType=VARCHAR},
+      zendao_module_name = #{record.zendaoModuleName,jdbcType=VARCHAR},
+      zendao_parent_module_id = #{record.zendaoParentModuleId,jdbcType=VARCHAR},
+      zendao_module_path = #{record.zendaoModulePath,jdbcType=VARCHAR},
+      create_time = #{record.createTime,jdbcType=BIGINT},
+      update_time = #{record.updateTime,jdbcType=BIGINT}
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="com.supretest.base.domain.ZendaoBranchTree">
+    update zendao_branch_tree
+    <set>
+      <if test="projectId != null">
+        project_id = #{projectId,jdbcType=VARCHAR},
+      </if>
+      <if test="zendaoProductId != null">
+        zendao_product_id = #{zendaoProductId,jdbcType=VARCHAR},
+      </if>
+      <if test="zendaoBranchId != null">
+        zendao_branch_id = #{zendaoBranchId,jdbcType=VARCHAR},
+      </if>
+      <if test="zendaoBranchName != null">
+        zendao_branch_name = #{zendaoBranchName,jdbcType=VARCHAR},
+      </if>
+      <if test="zendaoBranchStatus != null">
+        zendao_branch_status = #{zendaoBranchStatus,jdbcType=VARCHAR},
+      </if>
+      <if test="zendaoModuleId != null">
+        zendao_module_id = #{zendaoModuleId,jdbcType=VARCHAR},
+      </if>
+      <if test="zendaoModuleName != null">
+        zendao_module_name = #{zendaoModuleName,jdbcType=VARCHAR},
+      </if>
+      <if test="zendaoParentModuleId != null">
+        zendao_parent_module_id = #{zendaoParentModuleId,jdbcType=VARCHAR},
+      </if>
+      <if test="zendaoModulePath != null">
+        zendao_module_path = #{zendaoModulePath,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        create_time = #{createTime,jdbcType=BIGINT},
+      </if>
+      <if test="updateTime != null">
+        update_time = #{updateTime,jdbcType=BIGINT},
+      </if>
+    </set>
+    where id = #{id,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.supretest.base.domain.ZendaoBranchTree">
+    update zendao_branch_tree
+    set project_id = #{projectId,jdbcType=VARCHAR},
+      zendao_product_id = #{zendaoProductId,jdbcType=VARCHAR},
+      zendao_branch_id = #{zendaoBranchId,jdbcType=VARCHAR},
+      zendao_branch_name = #{zendaoBranchName,jdbcType=VARCHAR},
+      zendao_branch_status = #{zendaoBranchStatus,jdbcType=VARCHAR},
+      zendao_module_id = #{zendaoModuleId,jdbcType=VARCHAR},
+      zendao_module_name = #{zendaoModuleName,jdbcType=VARCHAR},
+      zendao_parent_module_id = #{zendaoParentModuleId,jdbcType=VARCHAR},
+      zendao_module_path = #{zendaoModulePath,jdbcType=VARCHAR},
+      create_time = #{createTime,jdbcType=BIGINT},
+      update_time = #{updateTime,jdbcType=BIGINT}
+    where id = #{id,jdbcType=VARCHAR}
+  </update>
+</mapper>

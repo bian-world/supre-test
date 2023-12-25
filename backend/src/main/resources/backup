@@ -1,0 +1,81 @@
+#!/bin/bash
+#主机地址可以是远程
+HOSTNAME="localhost"
+USER="root"
+PASSWORD="Password123@redis"
+PORT="3306"
+#全库备份 放开该注释
+#DATABASE_ARR=("--all-databases")
+
+#备份的库的名称
+DATABASE_ARR=("supretest")
+#长度减一循环到下标
+db_length=`expr ${#DATABASE_ARR[@]} - 1`
+DATE=`date '+%Y%m%d_%H%M%S'` #日期格式（作为文件名）
+day=`date '+%Y%m%d'` #日期格式（作为文件名）
+BACKUP_DIR=/Users/zouxingli/backup #备份文件存储路径
+LOGFILE=$BACKUP_DIR/log/"$day"_mysql_beifen.log #日记文件路径
+#切换至备份目录
+cd $BACKUP_DIR
+echo " " >> $LOGFILE
+echo " " >> $LOGFILE
+echo "———————————————–" >> $LOGFILE
+echo "------begin----BACKUP DATE:" $(date +"%y-%m-%d %H:%M:%S") >> $LOGFILE
+#按库来进行备份
+for i in $(seq 0 ${db_length}); do
+    # do something....
+    DATABASE=${DATABASE_ARR[$i]}
+    OPTIONS="-h$HOSTNAME -u$USER -p$PASSWORD $DATABASE -P$PORT"
+    if [ "$DATABASE" = "--all-databases" ];then
+        DATABASE="all-databases"
+    fi
+    DUMPFILE=$DATE-$DATABASE.sql #备份文件名
+    ARCHIVE=$DATE-$DATABASE.tar.gz #压缩文件名
+
+
+    #mysqldump --help
+
+    #判断备份文件存储目录是否存在，否则创建该目录
+    if [ ! -d $BACKUP_DIR ] ;
+    then
+            mkdir -p "$BACKUP_DIR"
+    fi
+    #开始备份之前，将备份信息头写入日记文件
+    #echo " " >> $LOGFILE
+    #echo " " >> $LOGFILE
+    #echo "———————————————–" >> $LOGFILE
+    #echo "BACKUP DATE:" $(date +"%y-%m-%d %H:%M:%S") >> $LOGFILE
+    #echo "———————————————– " >> $LOGFILE
+    #使用mysqldump 命令备份制定数据库，并以格式化的时间戳命名备份文件
+    mysqldump $OPTIONS > $DUMPFILE
+    #判断数据库备份是否成功
+    if [[ $? == 0 ]]; then
+        #创建备份文件的压缩包
+        tar czvf $ARCHIVE $DUMPFILE >> $LOGFILE 2>&1
+        #输入备份成功的消息到日记文件
+        echo "[$ARCHIVE] Backup Successful!" >> $LOGFILE
+        #删除原始备份文件，只需保 留数据库备份文件的压缩包即可
+        rm -f $DUMPFILE
+
+    else
+        echo "Database Backup Fail!" >> $LOGFILE
+    fi
+    #输出备份过程结束的提醒消息
+    echo "Database  Done" $DATABASE  $i  >> $LOGFILE
+done
+    #删除超时备份文件 5天
+    #find $BACKUP_DIR -name "*.sql.gz" -type f -mtime +14 -exec rm -rf {} \; > $BACKUP_DIR/null 2>&1
+    for file in `find $BACKUP_DIR -name "*.tar.gz" -type f -mtime +14` ;
+    do
+        echo "delete file " $file >> $LOGFILE
+        rm -rf $file
+    done
+    #清理超时日志
+    for file in `find $BACKUP_DIR -name "*.log" -type f -mtime +14` ;
+    do
+        echo "delete log " $file >> $LOGFILE
+        rm -rf $file
+    done
+    #输出备份过程结束的提醒消息
+    echo "----end----BACKUP DATE:" $(date +"%y-%m-%d %H:%M:%S") >> $LOGFILE
+    echo "———————————————–" >> $LOGFILE

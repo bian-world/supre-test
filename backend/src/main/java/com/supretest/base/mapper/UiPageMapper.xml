@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.supretest.base.mapper.UiPageMapper">
+    <resultMap id="BaseResultMap" type="com.supretest.base.domain.UiPage">
+        <id column="id" jdbcType="VARCHAR" property="id" />
+        <result column="num" jdbcType="INTEGER" property="num" />
+        <result column="parent_id" jdbcType="VARCHAR" property="parentId" />
+        <result column="module_id" jdbcType="VARCHAR" property="moduleId" />
+        <result column="module_path" jdbcType="VARCHAR" property="modulePath" />
+        <result column="project_id" jdbcType="VARCHAR" property="projectId" />
+        <result column="name" jdbcType="VARCHAR" property="name" />
+        <result column="pageLevel" jdbcType="VARCHAR" property="pageLevel" />
+        <result column="create_user" jdbcType="VARCHAR" property="createUser" />
+        <result column="description" jdbcType="VARCHAR" property="description" />
+        <result column="create_time" jdbcType="BIGINT" property="createTime" />
+        <result column="update_time" jdbcType="BIGINT" property="updateTime" />
+        <result column="sub_project_id" jdbcType="VARCHAR" property="subProjectId" />
+    </resultMap>
+    <resultMap id="Base_Element" type="com.supretest.base.domain.UiElement">
+        <id column="id" jdbcType="VARCHAR" property="id" />
+        <result column="num" jdbcType="INTEGER" property="num" />
+        <result column="module_id" jdbcType="VARCHAR" property="moduleId" />
+        <result column="project_id" jdbcType="VARCHAR" property="projectId" />
+        <result column="name" jdbcType="VARCHAR" property="name" />
+        <result column="location_type" jdbcType="VARCHAR" property="locationType" />
+        <result column="location" jdbcType="VARCHAR" property="location" />
+        <result column="create_user" jdbcType="VARCHAR" property="createUser" />
+        <result column="version_id" jdbcType="VARCHAR" property="versionId" />
+        <result column="ref_id" jdbcType="VARCHAR" property="refId" />
+        <result column="order" jdbcType="BIGINT" property="order" />
+        <result column="latest" jdbcType="BIT" property="latest" />
+        <result column="description" jdbcType="VARCHAR" property="description" />
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+        <result column="sub_project_id" jdbcType="VARCHAR" property="subProjectId" />
+        <result column="elementTotal" jdbcType="INTEGER" property="elementTotal" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, num, parent_id, module_id, module_path, project_id, name, pageLevel,
+            create_user, description, create_time, update_time, sub_project_id
+    </sql>
+    <sql id="Base_Element_Column_List">
+        id, num,page_id, module_id, project_id, `name`, location_type, `location`, create_user, version_id,
+    ref_id, `order`, latest, description, create_time, update_time
+    </sql>
+
+    <sql id="queryWhereCondition">
+        <where>
+<!--            <if test="request.combine != null">-->
+<!--                <include refid="combine">-->
+<!--                    <property name="condition" value="request.combine"/>-->
+<!--                    <property name="name" value="request.name"/>-->
+<!--                    <property name="objectKey" value="request.combine.tags"/>-->
+<!--                </include>-->
+<!--            </if>-->
+
+            <if test="request.name != null">
+                and (ui.name like CONCAT('%', #{request.name},'%')
+                or ui.num like CONCAT('%', #{request.name},'%')
+                or ui.custom_num like CONCAT('%', #{request.name},'%'))
+            </if>
+            <if test="request.workspaceId != null">
+                AND project.workspace_id = #{request.workspaceId}
+            </if>
+            <if test="request.id != null">
+                AND ui.id = #{request.id}
+            </if>
+            <if test="request.userId != null">
+                AND ui.user_id = #{request.userId}
+            </if>
+            <if test="request.moduleId != null">
+                AND ui.module_id = #{request.moduleId}
+            </if>
+            <if test="request.projectId != null">
+                AND ui.project_id = #{request.projectId}
+            </if>
+            <if test="request.subProjectId != null">
+                AND ui.sub_project_id = #{request.subProjectId}
+            </if>
+            <if test="request.createTime >0 ">
+                AND ui.create_time >= #{request.createTime}
+            </if>
+            <choose>
+                <when test="request.moduleIds != null and request.moduleIds.size() > 0">
+                    AND ui.module_id in
+                    <foreach collection="request.moduleIds" item="nodeId" separator="," open="(" close=")">
+                        #{nodeId}
+                    </foreach>
+                </when>
+                <when test="request.projectId != null">
+                    AND project.id = #{request.projectId}
+                </when>
+            </choose>
+            <if test="request.filters != null and request.filters.size() > 0">
+                <foreach collection="request.filters.entrySet()" index="key" item="values">
+                    <if test="values != null and values.size() > 0">
+                        <choose>
+                            <when test="key=='status'">
+                                and ui.status in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+                            <when test="key=='user_id'">
+                                and ui.user_id in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+                            <when test="key=='level'">
+                                and ui.level in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+                            <when test="key=='last_result'">
+                                and ui.last_result in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+                            <when test="key=='project_id'">
+                                and ui.project_id in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+                            <when test="key=='principal'">
+                                and ui.principal in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+                            <when test="key=='principal_name'">
+                                and ui.principal in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+                            <when test="key=='user_name'">
+                                and ui.user_id in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+                            <when test="key=='creator'">
+                                and ui.create_user in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+
+                            <when test="key=='version_id'">
+                                and ui.version_id in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+                        </choose>
+                    </if>
+                </foreach>
+            </if>
+
+        </where>
+    </sql>
+
+
+    <sql id="queryWhereConditions">
+        <where>
+
+            <if test="request.name != null">
+                and name like CONCAT('%', #{request.name},'%')
+                or num like CONCAT('%', #{request.name},'%')
+            </if>
+            <if test="request.id != null">
+                AND id = #{request.id}
+            </if>
+            <if test="request.userId != null">
+                AND user_id = #{request.userId}
+            </if>
+            <if test="request.moduleId != null">
+                AND module_id = #{request.moduleId}
+            </if>
+            <if test="request.projectId != null">
+                AND project_id = #{request.projectId}
+            </if>
+            <if test="request.subProjectId != null">
+                AND sub_project_id = #{request.subProjectId}
+            </if>
+            <if test="request.createTime >0 ">
+                AND create_time >= #{request.createTime}
+            </if>
+            <choose>
+                <when test="request.moduleIds != null and request.moduleIds.size() > 0">
+                    AND module_id in
+                    <foreach collection="request.moduleIds" item="nodeId" separator="," open="(" close=")">
+                        #{nodeId}
+                    </foreach>
+                </when>
+            </choose>
+            <if test="request.filters != null and request.filters.size() > 0">
+                <foreach collection="request.filters.entrySet()" index="key" item="values">
+                    <if test="values != null and values.size() > 0">
+                        <choose>
+                            <when test="key=='user_id'">
+                                and user_id in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+                            <when test="key=='level'">
+                                and level in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+                            <when test="key=='last_result'">
+                                and last_result in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+                            <when test="key=='project_id'">
+                                and project_id in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+                            <when test="key=='principal'">
+                                and principal in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+                            <when test="key=='principal_name'">
+                                and principal in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+                            <when test="key=='user_name'">
+                                and user_id in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+                            <when test="key=='creator'">
+                                and create_user in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+
+                            <when test="key=='version_id'">
+                                and version_id in
+                                <foreach collection="values" item="value" separator="," open="(" close=")">
+                                    #{value}
+                                </foreach>
+                            </when>
+                        </choose>
+                    </if>
+                </foreach>
+            </if>
+
+        </where>
+    </sql>
+
+    <select id="list" parameterType="com.supretest.base.domain.UiPage" resultType="com.supretest.ui.dto.UiPageDTO">
+        select *
+        from (
+            select
+                ui.id, ui.num, ui.name, ui.module_id, ui.project_id, ui.parent_id, uip.name as parent_page_name, ui.pageLevel,
+                ui.create_user, user.name as user_name, ui.description, ui.create_time, ui.update_time, ui.sub_project_id, zp.zendao_project_name as subProjectName, count(ue.page_id) as elementTotal
+            from ui_page ui
+                     left join ui_element ue on ui.id = ue.page_id
+                     LEFT JOIN zendao_project zp ON zp.id = ui.sub_project_id
+                     left join user on ui.create_user = user.id
+                     left join ui_page uip on ui.parent_id = uip.id
+            group by ui.id ) tmp
+        <include refid="queryWhereConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.supretest.base.domain.UiPage">
+        INSERT INTO ui_page (id, num, parent_id, module_id, module_path, project_id, name, pageLevel,
+                             create_user, description, create_time, update_time, sub_project_id)
+        VALUES (#{id,jdbcType=VARCHAR}, #{num,jdbcType=INTEGER}, #{parentId, jdbcType=VARCHAR},
+            #{moduleId, jdbcType=VARCHAR}, #{modulePath, jdbcType=VARCHAR}, #{projectId, jdbcType=VARCHAR}, #{name, jdbcType=VARCHAR},
+            #{pageLevel, jdbcType=VARCHAR},#{createUser, jdbcType=VARCHAR},#{description, jdbcType=VARCHAR},
+            #{createTime, jdbcType=BIGINT},#{updateTime, jdbcType=BIGINT}, #{subProjectId, jdbcType=VARCHAR}
+        )
+    </insert>
+
+
+
+    <select id="getPage" parameterType="com.supretest.base.domain.UiPage" resultMap="BaseResultMap">
+        select
+            <include refid="Base_Column_List" />
+        from ui_page
+        where id = #{id, jdbcType=VARCHAR}
+    </select>
+
+    <select id="getPageElements" parameterType="java.lang.String" resultMap="Base_Element">
+        select
+            <include refid="Base_Element_Column_List"/>
+        from ui_element
+        where page_id = #{id, jdbcType=VARCHAR}
+    </select>
+
+    <delete id="delete" parameterType="com.supretest.base.domain.UiPage">
+        delete from ui_page where id = #{id,jdbcType=VARCHAR}
+    </delete>
+
+    <update id="update" parameterType="com.supretest.base.domain.UiPage">
+        update ui_page
+        <set>
+<!--            修改页面结构较为复杂，本期暂不支持-->
+<!--            <if test="parentId != null">-->
+<!--                parent_id = #{parentId,jdbcType=VARCHAR},-->
+<!--            </if>-->
+            <if test="projectId != null">
+                project_id = #{projectId,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null">
+                `name` = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="parentId != null">
+                parent_id = #{parentId,jdbcType=VARCHAR},
+            </if>
+            <if test="pageLevel != null">
+                pageLevel = #{pageLevel,jdbcType=VARCHAR},
+            </if>
+            <if test="createUser != null">
+                `create_user` = #{createUser,jdbcType=VARCHAR},
+            </if>
+
+            <if test="description != null">
+                `description` = #{description,jdbcType=VARCHAR},
+            </if>
+
+            <if test="updateTime != null">
+                update_time = #{updateTime,jdbcType=BIGINT},
+            </if>
+
+        </set>
+        where id = #{id,jdbcType=VARCHAR}
+    </update>
+
+    <select id="getNextNum" resultType="com.supretest.base.domain.UiPage">
+        SELECT * FROM ui_page WHERE project_id = #{projectId} ORDER BY num DESC LIMIT 1;
+    </select>
+
+    <select id="moduleCountByCollection" resultType="java.util.Map">
+        select module_id AS moduleId,count(id) AS countNum from ui_page ui
+        <include refid="queryWhereCondition"/>
+        GROUP BY module_id
+    </select>
+
+
+    <select id="listAll" parameterType="com.supretest.ui.controller.request.UiPageRequest" resultMap="BaseResultMap">
+        select
+            ui.id, ui.num, ui.name, ui.module_id, ui.module_path, ui.project_id, ui.parent_id, ui.pageLevel,
+            ui.create_user, ui.description, ui.create_time, ui.update_time
+        from ui_page ui
+
+        <include refid="queryWhereCondition"/>
+    </select>
+
+    <update id="updateByPrimaryKeySelective" parameterType="com.supretest.base.domain.UiPage">
+        update ui_page
+        set num = #{num,jdbcType=INTEGER},
+            parent_id =  #{parentId, jdbcType=VARCHAR},
+            module_id = #{moduleId,jdbcType=VARCHAR},
+            module_path = #{modulePath,jdbcType=VARCHAR},
+            project_id = #{projectId, jdbcType=VARCHAR},
+            name =  #{name, jdbcType=VARCHAR},
+            pageLevel = #{pageLevel, jdbcType=VARCHAR},
+            create_user = #{createUser, jdbcType=VARCHAR},
+            description = #{description, jdbcType=VARCHAR},
+            create_time = #{createTime, jdbcType=BIGINT},
+            update_time = #{updateTime, jdbcType=BIGINT}
+
+        where id = #{id,jdbcType=VARCHAR}
+    </update>
+
+</mapper>
